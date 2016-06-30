@@ -30,7 +30,6 @@ FG_PREFIX = '3'
 BG_PREFIX = '4'
 BRIGHT_FG_PREFIX = '9'
 BRIGHT_BG_PREFIX = '10'
-RESET_EFFECT_PREFIX = '2'
 RESET_EVERYTHING = '0'
 ESCAPE = '\x1b'
 RESET = '\x1b[0m'
@@ -61,39 +60,21 @@ def color_code(color_name, fg=True):
             return BG_PREFIX + colors[color]
 
 
-def encode(name, value):
-    if name == 'fg':
-        return color_code(value, fg=True)
-    elif name == 'bg':
-        return color_code(value, fg=False)
-    elif value:
-        return effects[name]
-    else:
-        return RESET_EFFECT_PREFIX + effects[name]
-
-
 class AnsiFormat:
 
-    attrs = (
-        ('fg', None),
-        ('bg', None),
-        ('bold', None),
-        ('faint', None),
-        ('underline', None),
-        ('blink', None),
-        ('negative', None),
-    )
-
-    def __init__(self, **attrs):
-        for name, default in self.attrs:
-            setattr(self, name, attrs.get(name, default))
+    def __init__(self, *effects, fg=None, bg=None):
+        self.fg = fg
+        self.bg = bg
+        self.effects = effects
 
     def _codes(self):
         yield RESET_EVERYTHING
-        for name, _ in self.attrs:
-            value = getattr(self, name)
-            if value is not None:
-                yield encode(name, value)
+        if self.fg is not None:
+            yield color_code(self.fg, fg=True)
+        if self.bg is not None:
+            yield color_code(self.bg, fg=False)
+        for effect in self.effects:
+            yield effects[effect]
 
     def codes(self):
         return ';'.join(self._codes())
@@ -115,5 +96,9 @@ class AnsiFormat:
 reset = AnsiFormat()
 
 
-def colorize(obj, *, esc=ESCAPE, end=reset, **attrs):
-    return '{}{}{}'.format(AnsiFormat(**attrs).seq(esc), obj, end.seq(esc))
+def colorize(obj, *effects, fg=None, bg=None, esc=ESCAPE, end=reset):
+    return '{}{}{}'.format(
+        AnsiFormat(*effects, fg=fg, bg=bg).seq(esc),
+        obj,
+        end.seq(esc),
+    )

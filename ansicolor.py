@@ -84,8 +84,7 @@ class AnsiFormat:
         ('negative', None),
     )
 
-    def __init__(self, esc=ESCAPE, **attrs):
-        self.esc = esc
+    def __init__(self, **attrs):
         for name, default in self.attrs:
             setattr(self, name, attrs.get(name, default))
 
